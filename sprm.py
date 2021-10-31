@@ -71,7 +71,6 @@ def new_report(iwp):
             "СОК": str(sok(e, humans)) + "%"
         }
 
-
     print("\n\n\n")
 
     print("ФИО:", teacher)
