@@ -1,3 +1,4 @@
 *.json
 .vs
 .idea
+__pycache__

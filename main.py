@@ -9,33 +9,49 @@ from kivymd.uix.list import OneLineListItem
 from kivymd.uix.picker import MDDatePicker
 from kivymd.uix.snackbar import Snackbar
 
+from reportsmanager import ReportsManager
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
 
 Config.set('graphics', 'width', '1024')
 Config.set('graphics', 'height', '768')
 Config.set('graphics', 'resizable', '0')
 Config.write()
 
-teacher = ""
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
 
 
 class MenuScreen(Screen):
-    def __init__(self, **kwargs):
+    def __init__(self, rm, **kwargs):
         super().__init__(**kwargs)
+        self.rm = rm
+        last_teacher = rm.get_last_teacher()
+        if last_teacher != "NOBODY":
+            self.set_last_teacher(last_teacher)
         self.ids.teacher.bind(
             on_text_validate=self.save_teacher,
             on_focus=self.save_teacher,
         )
 
     def save_teacher(self, instance_textfield=None):
-        global teacher
-
         if instance_textfield.text != "":
             if len(instance_textfield.text.split()) == 3:
-                teacher = instance_textfield.text
+                self.rm.set_teacher(instance_textfield.text)
                 instance_textfield.error = False
                 instance_textfield.helper_text = ""
                 instance_textfield.helper_text_mode = "none"
                 self.ids.nav_button.disabled = False
+                if self.rm.is_teacher(instance_textfield.text):
+                    self.ids.history_button.disabled = False
+                    self.ids.stats_button.disabled = False
+                else:
+                    self.ids.history_button.disabled = True
+                    self.ids.stats_button.disabled = True
             else:
                 self.ids.nav_button.disabled = True
                 instance_textfield.error = True
@@ -45,15 +61,43 @@ class MenuScreen(Screen):
             instance_textfield.error = True
             instance_textfield.helper_text = "Это поле обязательно!"
 
+    def set_last_teacher(self, teacher):
+        self.ids.teacher.text = teacher
+        self.ids.nav_button.disabled = False
+        self.rm.set_teacher(teacher)
+        self.ids.history_button.disabled = False
+        self.ids.stats_button.disabled = False
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
 
 class MenuListItem(OneLineListItem):
     pass
 
 
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
+
+class SuccessScreen(Screen):
+    pass
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
+
 class CreateReportScreen(Screen):
     """Экран создания отчёта. Если у учителя уже создан отчёт, старый дополняется новыми данными."""
-    def __init__(self, **kwargs):
+    def __init__(self, rm, **kwargs):
         super().__init__(**kwargs)
+
+        self.rm = rm
 
         report_menu_items = [
             {
@@ -97,11 +141,6 @@ class CreateReportScreen(Screen):
         )
         """Выпадающее меню выбора четвертей"""
         self.n_quarter.bind()
-
-        self.ids.course.bind(
-            on_text_validate=self.valid_field,
-            on_focus=self.valid_field
-        )
 
 # ===================================================================== #
 
@@ -205,6 +244,8 @@ class CreateReportScreen(Screen):
         error_snackbar.size_hint_x = (1024 - (error_snackbar.snackbar_x * 2)) / 1024
         error_snackbar.open()
 
+# ===================================================================== #
+
     def get_checklist(self):
         """Возвращает чеклист на основе ввода пользователя."""
         checklist = {}
@@ -264,7 +305,8 @@ class CreateReportScreen(Screen):
             """ ========= ПРОВЕРКА ОЦЕНОК ========= """
             checklist["e"] = [self.valid_field(instance_textfield=self.ids[str(i)], only_digits=True,
                                                label=self.ids[str(i) + "_label"]) for i in range(2, 6)]
-            if checklist["e"] == [True for i in range(4)]:
+            checklist["e"] = all(checklist["e"])
+            if checklist["e"]:
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
 
                 """ ========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И ТЕКУЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========= """
@@ -284,7 +326,10 @@ class CreateReportScreen(Screen):
             checklist["report_type"] = True
 
             """ ========= ПРОВЕРКА ЧЕТВЕРТИ ========= """
-            quarter = int(self.ids.n_quarter.current_item)
+            if self.ids.n_quarter.current_item != "":
+                quarter = int(self.ids.n_quarter.current_item)
+            else:
+                quarter = 0
             if quarter in [1, 2, 3, 4]:
                 self.ids.n_quarter_label.color = (0, 0, 0, 1)
                 self.ids.n_quarter_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Четверть:"
@@ -297,7 +342,8 @@ class CreateReportScreen(Screen):
             """ ========= ПРОВЕРКА ОЦЕНОК ========= """
             checklist["e"] = [self.valid_field(instance_textfield=self.ids[str(i)], only_digits=True,
                                                label=self.ids[str(i) + "_label"]) for i in range(2, 6)]
-            if checklist["e"] == [True for i in range(4)]:
+            checklist["e"] = all(checklist["e"])
+            if checklist["e"]:
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
                 """ ========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И КОЛ_ВОМ ЧЕЛОВЕК ========= """
                 if sum(e.values()) != humans:
@@ -317,12 +363,82 @@ class CreateReportScreen(Screen):
 
         return checklist
 
+# ===================================================================== #
+
+    def set_default_values(self):
+        self.ids.course.text = ""
+        self.ids.course_label.text = "Предмет:"
+
+        self.ids.n_class.text = ""
+        self.ids.n_class_label.text = "Класс:"
+
+        self.ids.humans.text = ""
+        self.ids.humans_label.text = "Количество человек:"
+
+        self.ids.report_type.set_item("Выберете тип отчёта")
+        self.ids.report_type_label.text = "Тип отчёта:"
+
+        self.ids.date_label.text = "Дата:"
+
+        self.ids.curr_humans.text = ""
+        self.ids.curr_humans_label.text = "Сколько человек было на контрольной работе:"
+
+        self.ids.n_quarter.set_item("Выберете четверть")
+        self.ids.n_quarter_label.text = "Четверть:"
+
+        for i in range(2, 6):
+            self.ids[str(i)].text = ""
+            self.ids[str(i) + "_label"].text = str(i) + ":"
+
+        self.ids.quarters.disabled = True
+        self.ids.tests.disabled = True
+
+# ===================================================================== #
+
     def create_report(self):
         """Создаёт новый отчёт"""
-        global teacher
         if all(self.get_checklist().values()):
-            """ !!!!!!!!! ВСТАВИТЬ ИЗ SPRM.PY !!!!!!!!! """
-            print(" ========= ПИЗДАТО ========= ")
+            if self.ids.report_type.current_item == "Контрольная работа":
+                result_of_operation = self.rm.push(
+                    course=self.ids.course.text,
+                    n_class=int(self.ids.n_class.text),
+                    humans=int(self.ids.humans.text),
+                    report_type=self.ids.report_type.current_item,
+                    date=self.ids.date_label.text.split("[i]")[1].split("[/i]")[0],
+                    curr_humans=int(self.ids.curr_humans.text),
+                    e=dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
+                )
+                print(result_of_operation)
+                if result_of_operation == "SUCCESS":
+                    self.parent.current = "success"
+                    self.parent.transition.direction = "left"
+                    self.set_default_values()
+                else:
+                    self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
+                    self.set_default_values()
+
+            else:
+                result_of_operation = self.rm.push(
+                    course=self.ids.course.text,
+                    n_class=int(self.ids.n_class.text),
+                    humans=int(self.ids.humans.text),
+                    report_type=self.ids.report_type.current_item,
+                    n_quarter=self.ids.n_quarter.current_item,
+                    e=dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
+                )
+                print(result_of_operation)
+                if result_of_operation == "SUCCESS":
+                    self.parent.current = "success"
+                    self.parent.transition.direction = "left"
+                    self.set_default_values()
+                else:
+                    self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
+                    self.set_default_values()
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
 
 
 class HistoryOfReports(Screen):
@@ -330,12 +446,27 @@ class HistoryOfReports(Screen):
     pass
 
 
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
+
 class ImportReport(Screen):
     pass
 
 
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
+
 class Statistics(Screen):
     pass
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
 
 
 class SprmApp(MDApp):
@@ -343,6 +474,7 @@ class SprmApp(MDApp):
     def __init__(self):
         MDApp.__init__(self)
         self.sm = ScreenManager(transition=SlideTransition())
+        self.rm = ReportsManager()
 
     def back(self):
         """Метод, возвращающий пользователя на главный экран."""
@@ -350,12 +482,21 @@ class SprmApp(MDApp):
         self.sm.transition.direction = "right"
 
     def build(self):
-        self.sm.add_widget(MenuScreen(name="menu"))
-        self.sm.add_widget(CreateReportScreen(name="create_report"))
+        self.sm.add_widget(MenuScreen(name="menu", rm=self.rm))
+        self.sm.add_widget(CreateReportScreen(name="create_report", rm=self.rm))
         self.sm.add_widget(HistoryOfReports(name="history"))
         self.sm.add_widget(ImportReport(name="import"))
         self.sm.add_widget(Statistics(name="stats"))
+        self.sm.add_widget(SuccessScreen(name="success"))
         return self.sm
+
+    def on_stop(self):
+        self.rm.delete_trash_reports()
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
 
 
 if __name__ == '__main__':

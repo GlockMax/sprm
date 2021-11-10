@@ -58,9 +58,11 @@
                 font_size: "14sp"
                 on_release:
                     root.manager.current = "create_report"
+                    #root.manager.current = "success"
                     root.manager.transition.direction = "left"
 
             MDFlatButton:
+                id: history_button
                 text: "История отчётов"
                 font_size: "14sp"
                 disabled: True
@@ -76,11 +78,77 @@
                     root.manager.transition.direction = "left"
 
             MDFlatButton:
+                id: stats_button
                 text: "Статистика"
                 font_size: "14sp"
+                disabled: True
                 on_release:
                     root.manager.current = "stats"
                     root.manager.transition.direction = "left"
+
+#=====================================================================#
+#/////////////////////////////////////////////////////////////////////#
+#=====================================================================#
+
+<SuccessScreen>:
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        padding: [30, 30, 30, 30]
+
+        MDGridLayout:
+            rows: 2
+            spacing: 0
+
+            MDBoxLayout:
+                spacing: 30
+                pos_hint: {'center_x': .5, 'center_y': .55}
+
+                AnchorLayout:
+                    anchor_x: "center"
+                    anchor_y: "center"
+                    pos_hint: {'center_x': .5, 'center_y': .55}
+
+                    MDIcon:
+                        icon: "checkbox-marked-circle-outline"
+                        font_size: "48sp"
+                        halign: "right"
+                        color: "#4caf50"
+
+                AnchorLayout:
+                    anchor_x: "center"
+                    anchor_y: "center"
+                    pos_hint: {'center_x': .5, 'center_y': .552}
+
+                    MDLabel:
+                        text: "Отчёт создан!"
+                        font_size: "20sp"
+                        bold: True
+                        size_hint_y: None
+                        halign: "left"
+
+        MDGridLayout:
+            rows: 3
+            padding: [30, 50, 50, 50]
+            spacing: 30
+            pos_hint: {"center_x": 0.5, "center_y": .24}
+            #disabled: True
+
+            MDRectangleFlatIconButton:
+                icon: "arrow-left"
+                text: "В меню"
+                font_size: "14sp"
+                on_release: app.back()
+
+            MDRectangleFlatIconButton:
+                icon: "printer"
+                text: "Вывести на печать"
+                font_size: "14sp"
+
+            MDRectangleFlatIconButton:
+                icon: "file-download"
+                text: "Сохранить в .jpeg"
+                font_size: "14sp"
 
 #=====================================================================#
 #/////////////////////////////////////////////////////////////////////#
@@ -139,8 +207,6 @@
                         line_color_normal: 0, 0, 0, 1
                         line_color_focus: 0, 0, 0, 1
                         padding: [0, 0, 0, 0]
-                        #on_text_validate: root.valid_field(instance_textfield=self)
-                        #on_focus: root.valid_field(instance_textfield=self)
 
 # ========= КЛАСС ======== #
             MDBoxLayout:
