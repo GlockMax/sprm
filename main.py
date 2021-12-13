@@ -8,6 +8,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.list import OneLineListItem
 from kivymd.uix.picker import MDDatePicker
 from kivymd.uix.snackbar import Snackbar
+from kivymd.uix.datatables import MDDataTable
 
 from reportsmanager import ReportsManager
 
@@ -84,7 +85,27 @@ class MenuListItem(OneLineListItem):
 
 
 class SuccessScreen(Screen):
-    pass
+    def __init__(self, rm, **kwargs):
+        super().__init__(**kwargs)
+        self.rm = rm
+        self.last_report = {}
+
+    def get_stats_of_last_report(self, param):
+        return self.rm.pull(last_report=True).statistics[param]
+
+    def on_enter(self, *args):
+        self.last_report = self.rm.pull(last_report=True)
+        self.ids.perf.text = self.last_report.statistics["Успеваемость"]
+        self.ids.qual.text = self.last_report.statistics["Качество"]
+        self.ids.aver.text = str(self.last_report.statistics["Средний балл"])
+        self.ids.sok.text = self.last_report.statistics["СОК"]
+
+    def on_leave(self):
+        self.ids.perf.text = ""
+        self.ids.qual.text = ""
+        self.ids.aver.text = ""
+        self.ids.sok.text = ""
+        self.last_report = {}
 
 
 # ===================================================================== #
@@ -441,9 +462,69 @@ class CreateReportScreen(Screen):
 # ===================================================================== #
 
 
+class ReportTable(MDDataTable):
+    def __init__(self, sc, **kwargs):
+        super().__init__(**kwargs)
+        self.sc = sc
+
+    def on_check_press(self, a):
+        if self.get_row_checks():
+            self.sc.ids.delete.disabled = False
+            self.sc.ids.print.disabled = False
+            self.sc.ids.sjpg.disabled = False
+        else:
+            self.sc.ids.delete.disabled = True
+            self.sc.ids.print.disabled = True
+            self.sc.ids.sjpg.disabled = True
+
+
+# ===================================================================== #
+# ///////////////////////////////////////////////////////////////////// #
+# ===================================================================== #
+
+
 class HistoryOfReports(Screen):
     """Экран архива отчётов. Недоступен, если не существует ни одного отчёта (что логично)."""
-    pass
+    def __init__(self, rm, **kwargs):
+        super().__init__(**kwargs)
+
+        self.rm = rm
+
+        self.data_tables = ReportTable(
+            check=True,
+            column_data=[
+                ("[size=14]№[/size]", dp(20)),
+                ("[size=14]Предмет[/size]", dp(47)),
+                ("[size=14]Класс[/size]", dp(13)),
+                ("[size=14]Кол-во человек[/size]", dp(15)),
+                ("[size=14]Тип отчёта[/size]", dp(30)),
+                ("[size=14]Дата[/size]", dp(20)),
+                ("[size=14]Человек\n  на К/Р[/size]", dp(17)),
+                ("[size=14]Четверть[/size]", dp(17)),
+                ("[size=14]5[/size]", dp(9)),
+                ("[size=14]4[/size]", dp(9)),
+                ("[size=14]3[/size]", dp(9)),
+                ("[size=14]2[/size]", dp(9)),
+            ],
+            elevation=2,
+            sc=self,
+            rows_num=10000,
+        )
+        self.ids.history.add_widget(self.data_tables)
+
+    def on_pre_enter(self, *args):
+        pull = self.rm.pull()
+        self.data_tables.row_data = ([i.to_list(no_stats=True, order=1) for i in pull] if len(pull) > 1 else
+                                     [pull[-1].to_list(no_stats=True, order=1), ["-" for i in range(12)]])
+
+    def delete_report(self):
+        [self.rm.delete(i, from_str=True) for i in self.data_tables.get_row_checks()]
+
+    def print_report(self):
+        reports = self.data_tables.get_row_checks()
+
+    def save_in_jpeg(self):
+        reports = self.data_tables.get_row_checks()
 
 
 # ===================================================================== #
@@ -484,10 +565,10 @@ class SprmApp(MDApp):
     def build(self):
         self.sm.add_widget(MenuScreen(name="menu", rm=self.rm))
         self.sm.add_widget(CreateReportScreen(name="create_report", rm=self.rm))
-        self.sm.add_widget(HistoryOfReports(name="history"))
+        self.sm.add_widget(HistoryOfReports(name="history", rm=self.rm))
         self.sm.add_widget(ImportReport(name="import"))
         self.sm.add_widget(Statistics(name="stats"))
-        self.sm.add_widget(SuccessScreen(name="success"))
+        self.sm.add_widget(SuccessScreen(name="success", rm=self.rm))
         return self.sm
 
     def on_stop(self):

@@ -97,17 +97,17 @@
         padding: [30, 30, 30, 30]
 
         MDGridLayout:
-            rows: 2
+            rows: 5
             spacing: 0
 
             MDBoxLayout:
                 spacing: 30
-                pos_hint: {'center_x': .5, 'center_y': .55}
+                pos_hint: {'center_x': .5, 'center_y': .30}
 
                 AnchorLayout:
                     anchor_x: "center"
                     anchor_y: "center"
-                    pos_hint: {'center_x': .5, 'center_y': .55}
+                    pos_hint: {'center_x': .5, 'center_y': .30}
 
                     MDIcon:
                         icon: "checkbox-marked-circle-outline"
@@ -118,7 +118,7 @@
                 AnchorLayout:
                     anchor_x: "center"
                     anchor_y: "center"
-                    pos_hint: {'center_x': .5, 'center_y': .552}
+                    pos_hint: {'center_x': .5, 'center_y': .30}
 
                     MDLabel:
                         text: "Отчёт создан!"
@@ -126,6 +126,122 @@
                         bold: True
                         size_hint_y: None
                         halign: "left"
+
+            MDGridLayout:
+                rows: 4
+
+                MDBoxLayout:
+                    rows: 4
+                    spacing: 30
+                    pos_hint: {'center_x': .5, 'center_y': 1}
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 1}
+
+                        MDLabel:
+                            text: "Успеваемость:"
+                            font_size: "14sp"
+                            bold: True
+                            size_hint_y: None
+                            halign: "right"
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 1}
+
+                        MDLabel:
+                            id: perf
+                            text: ""
+                            font_size: "14sp"
+                            size_hint_y: None
+                            halign: "left"
+
+                MDBoxLayout:
+                    spacing: 30
+                    pos_hint: {'center_x': .5, 'center_y': 1.5}
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 1.5}
+
+                        MDLabel:
+                            text: "Качество:"
+                            font_size: "14sp"
+                            bold: True
+                            size_hint_y: None
+                            halign: "right"
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 1.5}
+
+                        MDLabel:
+                            id: qual
+                            text: ""
+                            font_size: "14sp"
+                            size_hint_y: None
+                            halign: "left"
+
+                MDBoxLayout:
+                    spacing: 30
+                    pos_hint: {'center_x': .5, 'center_y': 2}
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 2}
+
+                        MDLabel:
+                            text: "Средний балл:"
+                            font_size: "14sp"
+                            bold: True
+                            size_hint_y: None
+                            halign: "right"
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 2}
+
+                        MDLabel:
+                            id: aver
+                            text: ""
+                            font_size: "14sp"
+                            size_hint_y: None
+                            halign: "left"
+
+                MDBoxLayout:
+                    spacing: 30
+                    pos_hint: {'center_x': .5, 'center_y': 2.5}
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 2.5}
+
+                        MDLabel:
+                            text: "СОК:"
+                            font_size: "14sp"
+                            bold: True
+                            size_hint_y: None
+                            halign: "right"
+
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        pos_hint: {'center_x': .5, 'center_y': 2.5}
+
+                        MDLabel:
+                            id: sok
+                            text: ""
+                            font_size: "14sp"
+                            size_hint_y: None
+                            halign: "left"
 
         MDGridLayout:
             rows: 3
@@ -564,11 +680,56 @@
 <HistoryOfReports>:
 	MDBoxLayout:
 	    orientation: "vertical"
+
 	    MDToolbar:
 	        title: "История отчётов"
 	        md_bg_color: 0, 0, 1, 0
 	        specific_text_color: "black"
 	    	left_action_items: [["arrow-left", lambda x: app.back()]]
+
+        MDBoxLayout:
+            size_hint_x: None
+            pos_hint: {"center_x": .3, "center_y": 1}
+            size_hint_y: None
+
+            MDGridLayout:
+                cols: 3
+                spacing: 30
+
+                MDRectangleFlatIconButton:
+                    id: delete
+                    padding: [0, 0, 0, 0]
+                    icon_color: 1, 0, 0, 1
+                    text_color: 1, 0, 0, 1
+                    line_color: 1, 0, 0, 1
+                    icon: "trash-can-outline"
+                    text: "Удалить"
+                    disabled: True
+                    on_release: root.delete_report()
+
+                MDRectangleFlatIconButton:
+                    id: print
+                    icon: "printer"
+                    padding: [0, 0, 0, 0]
+                    #icon: "trash-can-outline"
+                    text: "Распечатать"
+                    disabled: True
+                    on_release: root.print_report()
+
+                MDRectangleFlatIconButton:
+                    id: sjpg
+                    icon: "file-download"
+                    padding: [0, 0, 0, 0]
+                    #icon: "trash-can-outline"
+                    text: "Сохранить в .jpeg"
+                    disabled: True
+                    on_release: root.save_in_jpeg()
+        MDBoxLayout:
+            AnchorLayout:
+                id: history
+                anchor_x: "center"
+                anchor_y: "top"
+                pos_hint: {"center_x": .5, "center_y": .57}
 
 #=====================================================================#
 #/////////////////////////////////////////////////////////////////////#
