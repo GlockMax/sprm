@@ -42,7 +42,7 @@
                         helper_text_mode: "on_error"
                         required: True
                         #on_text_validate: root.save_teacher()
-                        #on_focus: root.save_teacher()
+                        on_focus: if self.focus: root.teacher_menu.open()
 
 
         MDGridLayout:
@@ -323,6 +323,7 @@
                         line_color_normal: 0, 0, 0, 1
                         line_color_focus: 0, 0, 0, 1
                         padding: [0, 0, 0, 0]
+                        on_focus: if self.focus: root.course_menu.open()
 
 # ========= КЛАСС ======== #
             MDBoxLayout:
@@ -357,6 +358,7 @@
                         line_color_normal: 0, 0, 0, 1
                         line_color_focus: 0, 0, 0, 1
                         padding: [0, 0, 0, 0]
+                        on_focus: if self.focus: root.n_class_menu.open()
 
 # ========= КОЛ-ВО ЧЕЛОВЕК ======== #
             MDBoxLayout:

@@ -28,18 +28,28 @@ Config.write()
 
 
 class MenuScreen(Screen):
+    """Класс основного экрана приложения."""
     def __init__(self, rm, **kwargs):
         super().__init__(**kwargs)
         self.rm = rm
-        last_teacher = rm.get_last_teacher()
-        if last_teacher != "NOBODY":
-            self.set_last_teacher(last_teacher)
+        self.teacher_menu = MDDropdownMenu(
+            caller=self.ids.teacher,
+            items=[],
+            position="bottom",
+            width_mult=6
+        )
+        self.teacher_menu.bind()
+        last_teacher = rm.get_teacher(last=True)
+        if last_teacher:
+            self.set_teacher(last_teacher)
         self.ids.teacher.bind(
             on_text_validate=self.save_teacher,
-            on_focus=self.save_teacher,
         )
 
+# ===================================================================== #
+
     def save_teacher(self, instance_textfield=None):
+        """Инициализируем менеджера до конца для нового учителя и разблокируем кнопки управления."""
         if instance_textfield.text != "":
             if len(instance_textfield.text.split()) == 3:
                 self.rm.set_teacher(instance_textfield.text)
@@ -61,13 +71,38 @@ class MenuScreen(Screen):
             self.ids.nav_button.disabled = True
             instance_textfield.error = True
             instance_textfield.helper_text = "Это поле обязательно!"
+        self.teacher_menu.dismiss()
 
-    def set_last_teacher(self, teacher):
+# ===================================================================== #
+
+    def set_teacher(self, teacher):
+        """Устанавливаем уже существующего менеджера на выбранного учителя."""
         self.ids.teacher.text = teacher
         self.ids.nav_button.disabled = False
         self.rm.set_teacher(teacher)
         self.ids.history_button.disabled = False
         self.ids.stats_button.disabled = False
+        self.teacher_menu.dismiss()
+
+# ===================================================================== #
+
+    def on_pre_enter(self, *args):
+        """Перед входом посмотрим, какие у нас есть учителя."""
+        self.teacher_menu.items = [
+            {
+                 "viewclass": "MenuListItem",
+                 "text": str(i),
+                 "height": dp(56),
+                 "on_release": lambda x=str(i): self.set_teacher(x),
+            } for i in self.rm.get_teacher()
+        ] + [
+            {
+                 "viewclass": "MenuListItem",
+                 "text": "Другой (просто пишите свои ФИО)",
+                 "height": dp(56),
+                 "on_release": lambda x=str(): self.set_teacher(x),
+            }
+        ]
 
 
 # ===================================================================== #
@@ -76,7 +111,7 @@ class MenuScreen(Screen):
 
 
 class MenuListItem(OneLineListItem):
-    pass
+    """Шаблон отображения элементов всех менюшек"""
 
 
 # ===================================================================== #
@@ -85,22 +120,26 @@ class MenuListItem(OneLineListItem):
 
 
 class SuccessScreen(Screen):
+    """Экран успеха создания отчёта."""
     def __init__(self, rm, **kwargs):
         super().__init__(**kwargs)
         self.rm = rm
         self.last_report = {}
 
-    def get_stats_of_last_report(self, param):
-        return self.rm.pull(last_report=True).statistics[param]
+# ===================================================================== #
 
     def on_enter(self, *args):
+        """Перед входом на этот экран заполняем статистику только что приготовленного отчёта."""
         self.last_report = self.rm.pull(last_report=True)
         self.ids.perf.text = self.last_report.statistics["Успеваемость"]
         self.ids.qual.text = self.last_report.statistics["Качество"]
         self.ids.aver.text = str(self.last_report.statistics["Средний балл"])
         self.ids.sok.text = self.last_report.statistics["СОК"]
 
+# ===================================================================== #
+
     def on_leave(self):
+        """Когда уходим с этого экрана, все лейблы очищаем."""
         self.ids.perf.text = ""
         self.ids.qual.text = ""
         self.ids.aver.text = ""
@@ -118,8 +157,28 @@ class CreateReportScreen(Screen):
     def __init__(self, rm, **kwargs):
         super().__init__(**kwargs)
 
+        """========= Инициализация менеджера отчётов ========="""
         self.rm = rm
 
+        """========= Создание меню выбора предмета ========="""
+        self.course_menu = MDDropdownMenu(
+            caller=self.ids.course,
+            items=[],
+            position="bottom",
+            width_mult=6
+        )
+        self.course_menu.bind()
+
+        """========= Создание меню выбора класса ========="""
+        self.n_class_menu = MDDropdownMenu(
+            caller=self.ids.n_class,
+            items=[],
+            position="bottom",
+            width_mult=6
+        )
+        self.n_class_menu.bind()
+
+        """========= Создание меню выбора типа отчёта ========="""
         report_menu_items = [
             {
                 "viewclass": "MenuListItem",
@@ -134,17 +193,15 @@ class CreateReportScreen(Screen):
                 "on_release": lambda x="Четверть": self.set_report_type(x),
             }
         ]
-        """Список элеметов для выпадающего меню выбора типа отчёта"""
-
         self.report_type = MDDropdownMenu(
             caller=self.ids.report_type,
             items=report_menu_items,
             position="center",
             width_mult=4,
         )
-        """Выпадающее меню выбора типа отчёта"""
         self.report_type.bind()
 
+        """========= Создание меню выбора четвертей ========="""
         quarters = [
             {
                 "viewclass": "MenuListItem",
@@ -153,15 +210,70 @@ class CreateReportScreen(Screen):
                 "on_release": lambda x=str(i): self.set_quarter(x),
             } for i in range(1, 5)
         ]
-
         self.n_quarter = MDDropdownMenu(
             caller=self.ids.n_quarter,
             items=quarters,
             position="center",
             width_mult=4,
         )
-        """Выпадающее меню выбора четвертей"""
         self.n_quarter.bind()
+
+# ===================================================================== #
+
+    def set_course(self, item):
+        """Устанавливает предмет из меню выбора."""
+        self.ids.course.text = item if item != "Другой (просто пишите название предмета)" else ""
+        self.course_menu.dismiss()
+
+# ===================================================================== #
+
+    def set_n_class(self, item):
+        """Устанавливает класс и кол-во человек из меню выбора."""
+        if item == "":
+            self.ids.n_class.text = ""
+            self.ids.humans.text = ""
+            self.ids.humans.disabled = False
+        else:
+            self.ids.n_class.text = item
+            self.ids.humans.text = str(self.rm.pull(show_humans=True, n_class=int(item)))
+            self.ids.humans.disabled = True
+        self.n_class_menu.dismiss()
+
+# ===================================================================== #
+
+    def on_pre_enter(self, *args):
+        """Перед переходом на этот экран этот метод заполняет меню классов и предметов."""
+        self.course_menu.items = [
+            {
+                "viewclass": "MenuListItem",
+                "text": str(i),
+                "height": dp(56),
+                "on_release": lambda x=str(i): self.set_course(x),
+            } for i in self.rm.pull(only_courses=True)
+        ] + [
+            {
+                "viewclass": "MenuListItem",
+                "text": "Другой (просто пишите название предмета)",
+                "height": dp(56),
+                "on_release": lambda x=str(): self.set_course(x),
+            }
+        ]
+
+        self.n_class_menu.items = [
+            {
+                "viewclass": "MenuListItem",
+                "text": str(i),
+                "height": dp(56),
+                "on_release": lambda x=str(i): self.set_n_class(x),
+            } for i in self.rm.pull(only_classes=True)
+        ] + [
+            {
+                "viewclass": "MenuListItem",
+                "text": "Другой (просто пишите номер класса)",
+                "height": dp(56),
+                "on_release": lambda x=str(): self.set_n_class(x),
+            }
+        ]
 
 # ===================================================================== #
 
@@ -209,8 +321,9 @@ class CreateReportScreen(Screen):
 
     def valid_field(self, instance_textfield=None, only_digits=False, label=None, force_warning=False):
         """Проверяет instance_textfield, изменяет его и сопутствующий с ним label
-         и выдаёт True, если поле заполнено правильно. name_field присутствует для правильного форматирования label."""
+         и выдаёт True, если поле заполнено правильно."""
         def set_success_status():
+            """По сути, добавляет зелёную галочку к лейблу."""
             instance_textfield.line_color_normal = (0, 0, 0, 1)
             instance_textfield.line_color_focus = (0, 0, 0, 1)
             instance_textfield.helper_text = ""
@@ -220,6 +333,7 @@ class CreateReportScreen(Screen):
             label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + name_field
 
         def set_failure_status(helper_text="Это поле обязательно!", warning=False):
+            """По сути, добавляет красный крестик или восклицательный знак к лейблу."""
             instance_textfield.line_color_normal = (1, 0, 0, 1)
             instance_textfield.line_color_focus = (1, 0, 0, 1)
             instance_textfield.helper_text = helper_text
@@ -230,26 +344,26 @@ class CreateReportScreen(Screen):
 
         name_field = label.text.split("  ")[-1]
         if force_warning:
-            """ ========= ВЫСТАВИТЬ ФЛАГ ПРЕДУПРЕЖДЕНИЯ ========= """
+            """========= ВЫСТАВИТЬ ФЛАГ ПРЕДУПРЕЖДЕНИЯ ========="""
             set_failure_status(warning=True)
             return False
         if instance_textfield.text != "":
             if only_digits:
-                """ ========= ЦИФРЫ ДОЛЖНЫ БЫТЬ ========= """
+                """========= ЦИФРЫ ДОЛЖНЫ БЫТЬ ========="""
                 if instance_textfield.text.isdigit():
-                    """Цифры написаны"""
+                    """========= Цифры написаны ========="""
                     set_success_status()
                     return True
                 else:
-                    """ ========= ЦИФРЫ НЕ НАПИСАНЫ ========= """
+                    """========= ЦИФРЫ НЕ НАПИСАНЫ ========="""
                     set_failure_status("Пожалуйста, заполните правильно это поле!")
                     return False
             else:
-                """ ========= ЦИФР НЕ ДОЛЖНО БЫТЬ, НО ЧТО-ТО НАПИСАНО БЫТЬ ДОЛЖНО ========= """
+                """========= ЦИФР НЕ ДОЛЖНО БЫТЬ, НО ЧТО-ТО НАПИСАНО БЫТЬ ДОЛЖНО ========="""
                 set_success_status()
                 return True
         else:
-            """ ========= НИЧЕГО НЕ НАПИСАНО ========= """
+            """========= НИЧЕГО НЕ НАПИСАНО ========="""
             set_failure_status()
             return False
 
@@ -270,31 +384,31 @@ class CreateReportScreen(Screen):
     def get_checklist(self):
         """Возвращает чеклист на основе ввода пользователя."""
         checklist = {}
-        """Не зря это чеклист: в эту переменную мы ложим все возвращаемые значения valid_field. 
-        Если хоть одно значение будет ложным, мы не создадим отчёт"""
+        """========= Не зря это чеклист: в эту переменную мы ложим все возвращаемые значения valid_field. 
+        Если хоть одно значение будет ложным, мы не создадим отчёт ========="""
 
-        """ ========= ПРОВЕРКА ПРЕДМЕТА ========= """
+        """========= ПРОВЕРКА ПРЕДМЕТА ========="""
         checklist["course"] = self.valid_field(instance_textfield=self.ids.course, label=self.ids.course_label)
 
-        """ ========= ПРОВЕРКА КЛАССА ========= """
+        """========= ПРОВЕРКА КЛАССА ========="""
         checklist["n_class"] = self.valid_field(instance_textfield=self.ids.n_class, only_digits=True,
                                                 label=self.ids.n_class_label)
-        """ ========= ПРОВЕРКА КОЛ-ВА ЧЕЛОВЕК ========= """
+        """========= ПРОВЕРКА КОЛ-ВА ЧЕЛОВЕК ========="""
         checklist["humans"] = self.valid_field(instance_textfield=self.ids.humans, only_digits=True,
                                                label=self.ids.humans_label)
         if self.ids.humans.text != "":
             humans = int(self.ids.humans.text)
         else:
             humans = 0
-        """ ========= ПРОВЕРКА ТИПА ОТЧЁТА ========= """
+        """========= ПРОВЕРКА ТИПА ОТЧЁТА ========="""
         report_type = self.ids.report_type.current_item
         if report_type == "Контрольная работа":
-            """ >>>>>>>>> ВЕТКА КОНТРОЛЬНЫХ РАБОТ >>>>>>>>> """
+            """>>>>>>>>> ВЕТКА КОНТРОЛЬНЫХ РАБОТ >>>>>>>>>"""
             self.ids.report_type_label.color = (0, 0, 0, 1)
             self.ids.report_type_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Тип отчёта:"
             checklist["report_type"] = True
 
-            """ ========= ПРОВЕРКА ДАТЫ КР ========= """
+            """========= ПРОВЕРКА ДАТЫ КР ========="""
             if len(self.ids.date_label.text.split("[i]")) > 1:
                 date = str(self.ids.date_label.text).split("[i]")[1].split("[/i]")[0]
                 """Дата КР у нас лежит в лейбле, так что нужно её оттуда достать"""
@@ -307,7 +421,7 @@ class CreateReportScreen(Screen):
                 self.ids.date_label.text = "[font=segemj]❌[/font]  " + "Дата:"
                 checklist["date"] = False
 
-            """ ========= ПРОВЕРКА КОЛ-ВА ЧЕЛОВЕК НА КР ========= """
+            """========= ПРОВЕРКА КОЛ-ВА ЧЕЛОВЕК НА КР ========="""
             checklist["curr_humans"] = self.valid_field(instance_textfield=self.ids.curr_humans, only_digits=True,
                                                         label=self.ids.curr_humans_label)
             if self.ids.curr_humans.text != "":
@@ -315,7 +429,7 @@ class CreateReportScreen(Screen):
             else:
                 curr_humans = 0
 
-            """ ========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ ТЕКУЩИМ И ОБЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========= """
+            """========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ ТЕКУЩИМ И ОБЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========="""
             if curr_humans > humans:
                 self.create_error_snackbar("Ошибка: человек на контрольной работе больше, чем есть в классе!")
                 checklist["curr_humans"] = self.valid_field(instance_textfield=self.ids.curr_humans,
@@ -323,14 +437,14 @@ class CreateReportScreen(Screen):
                 checklist["humans"] = self.valid_field(instance_textfield=self.ids.humans,
                                                        label=self.ids.humans_label, force_warning=True)
 
-            """ ========= ПРОВЕРКА ОЦЕНОК ========= """
+            """========= ПРОВЕРКА ОЦЕНОК ========="""
             checklist["e"] = [self.valid_field(instance_textfield=self.ids[str(i)], only_digits=True,
                                                label=self.ids[str(i) + "_label"]) for i in range(2, 6)]
             checklist["e"] = all(checklist["e"])
             if checklist["e"]:
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
 
-                """ ========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И ТЕКУЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========= """
+                """========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И ТЕКУЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========="""
                 if sum(e.values()) != curr_humans:
                     self.create_error_snackbar(
                         f"Ошибка: количество оценок {'выше' if sum(e.values()) > curr_humans else 'ниже'}, чем количество человек на контрольной работе!")
@@ -339,14 +453,14 @@ class CreateReportScreen(Screen):
                     checklist["e"] = [self.valid_field(
                         instance_textfield=self.ids[str(i)], only_digits=True, label=self.ids[str(i) + "_label"],
                         force_warning=True) for i in range(2, 6)]
-
+            """<<<<<<<<< КОНЕЦ ВЕТКИ КОНТРОЛЬНЫХ РАБОТ <<<<<<<<<"""
         elif report_type == "Четверть":
-            """ >>>>>>>>> ВЕТКА ДЛЯ ЧЕТВЕРТЕЙ >>>>>>>>> """
+            """>>>>>>>>> ВЕТКА ДЛЯ ЧЕТВЕРТЕЙ >>>>>>>>>"""
             self.ids.report_type_label.color = (0, 0, 0, 1)
             self.ids.report_type_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Тип отчёта:"
             checklist["report_type"] = True
 
-            """ ========= ПРОВЕРКА ЧЕТВЕРТИ ========= """
+            """========= ПРОВЕРКА ЧЕТВЕРТИ ========="""
             if self.ids.n_quarter.current_item != "":
                 quarter = int(self.ids.n_quarter.current_item)
             else:
@@ -360,13 +474,13 @@ class CreateReportScreen(Screen):
                 self.ids.n_quarter_label.text = "[font=segemj]❌[/font]  " + "Четверть:"
                 checklist["n_quarter"] = False
 
-            """ ========= ПРОВЕРКА ОЦЕНОК ========= """
+            """========= ПРОВЕРКА ОЦЕНОК ========="""
             checklist["e"] = [self.valid_field(instance_textfield=self.ids[str(i)], only_digits=True,
                                                label=self.ids[str(i) + "_label"]) for i in range(2, 6)]
             checklist["e"] = all(checklist["e"])
             if checklist["e"]:
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
-                """ ========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И КОЛ_ВОМ ЧЕЛОВЕК ========= """
+                """========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И КОЛ_ВОМ ЧЕЛОВЕК ========="""
                 if sum(e.values()) != humans:
                     self.create_error_snackbar(
                         f"Ошибка: количество оценок {'выше' if sum(e.values()) > humans else 'ниже'}, чем количество человек в классе!")
@@ -375,18 +489,20 @@ class CreateReportScreen(Screen):
                     checklist["e"] = [self.valid_field(
                         instance_textfield=self.ids[str(i)], only_digits=True, label=self.ids[str(i) + "_label"],
                         force_warning=True) for i in range(2, 6)]
-
+            """<<<<<<<<< КОНЕЦ ВЕТКИ ЧЕТВЕРТЕЙ <<<<<<<<<"""
         else:
-            """ >>>>>>>>> ВЕТКА ДЛЯ ПУСТОГО ЗНАЧЕНИЯ >>>>>>>>> """
+            """>>>>>>>>> ВЕТКА ПУСТОГО ЗНАЧЕНИЯ >>>>>>>>>"""
             self.ids.report_type_label.color = (1, 0, 0, 1)
             self.ids.report_type_label.text = "[font=segemj]❌[/font]  " + "Тип отчёта:"
             checklist["report_type"] = False
+            """<<<<<<<<< КОНЕЦ ВЕТКИ ПУСТОГО ЗНАЧЕНИЯ <<<<<<<<<"""
 
         return checklist
 
 # ===================================================================== #
 
     def set_default_values(self):
+        """Выставляет пустые значения для всех полей."""
         self.ids.course.text = ""
         self.ids.course_label.text = "Предмет:"
 
@@ -417,7 +533,7 @@ class CreateReportScreen(Screen):
 # ===================================================================== #
 
     def create_report(self):
-        """Создаёт новый отчёт"""
+        """Создаёт новый отчёт."""
         if all(self.get_checklist().values()):
             if self.ids.report_type.current_item == "Контрольная работа":
                 result_of_operation = self.rm.push(
@@ -463,11 +579,16 @@ class CreateReportScreen(Screen):
 
 
 class ReportTable(MDDataTable):
+    """Класс для таблицы отчётов. Наследуется от MDDataTable и ничем примечательным не отличается, кроме включения и
+    отключения кнопок удаления, печати и сохранения в джипег."""
     def __init__(self, sc, **kwargs):
         super().__init__(**kwargs)
         self.sc = sc
 
+# ===================================================================== #
+
     def on_check_press(self, a):
+        """Вызывается, когда нажат чекбокс, и делает видимыми кнопки управления."""
         if self.get_row_checks():
             self.sc.ids.delete.disabled = False
             self.sc.ids.print.disabled = False
@@ -512,19 +633,36 @@ class HistoryOfReports(Screen):
         )
         self.ids.history.add_widget(self.data_tables)
 
+# ===================================================================== #
+
     def on_pre_enter(self, *args):
+        """Вызывается перед переходом на этот экран и обновляет таблицу отчётов."""
+        self.update_table()
+
+# ===================================================================== #
+
+    def update_table(self):
+        """Обновляет таблицу"""
         pull = self.rm.pull()
         self.data_tables.row_data = ([i.to_list(no_stats=True, order=1) for i in pull] if len(pull) > 1 else
                                      [pull[-1].to_list(no_stats=True, order=1), ["-" for i in range(12)]])
 
+# ===================================================================== #
+
     def delete_report(self):
+        """Удаляет выбранные отчёты."""
         [self.rm.delete(i, from_str=True) for i in self.data_tables.get_row_checks()]
+        self.update_table()
+
+# ===================================================================== #
 
     def print_report(self):
-        reports = self.data_tables.get_row_checks()
+        """Выводит на печать выбранные отчёты."""
+
+# ===================================================================== #
 
     def save_in_jpeg(self):
-        reports = self.data_tables.get_row_checks()
+        """Сохраняет в джипег выбранные отчёты."""
 
 
 # ===================================================================== #
@@ -556,13 +694,19 @@ class SprmApp(MDApp):
         MDApp.__init__(self)
         self.sm = ScreenManager(transition=SlideTransition())
         self.rm = ReportsManager()
+        """========= Мы пока не пишем имя учителя, ибо оно будет известно только в MenuScreen ========="""
+
+# ===================================================================== #
 
     def back(self):
         """Метод, возвращающий пользователя на главный экран."""
         self.sm.current = "menu"
         self.sm.transition.direction = "right"
 
+# ===================================================================== #
+
     def build(self):
+        """'Постройка' нашего приложения"""
         self.sm.add_widget(MenuScreen(name="menu", rm=self.rm))
         self.sm.add_widget(CreateReportScreen(name="create_report", rm=self.rm))
         self.sm.add_widget(HistoryOfReports(name="history", rm=self.rm))
@@ -571,7 +715,10 @@ class SprmApp(MDApp):
         self.sm.add_widget(SuccessScreen(name="success", rm=self.rm))
         return self.sm
 
+# ===================================================================== #
+
     def on_stop(self):
+        """По выходу из приложения удаляет мусорные отчёты."""
         self.rm.delete_trash_reports()
 
 
