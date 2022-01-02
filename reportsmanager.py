@@ -200,7 +200,7 @@ class ReportsManager:
             return list(set([Report(i).humans for i in reports if Report(i).n_class == n_class]))[0]
         return (list(set([Report(i).n_class for i in reports])) if only_classes else (
             list(set([Report(i).course for i in reports])) if only_courses else (
-                Report(reports[-1]) if last_report else 
+                Report(reports[-1]) if last_report else
                 list(set([Report(i).humans for i in reports if Report(i).n_class == n_class]))[0]
                 if show_humans else[Report(i) for i in reports])))
 

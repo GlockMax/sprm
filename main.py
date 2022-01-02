@@ -12,6 +12,8 @@ from kivymd.uix.datatables import MDDataTable
 
 from reportsmanager import ReportsManager
 
+import locale
+
 
 # ===================================================================== #
 # ///////////////////////////////////////////////////////////////////// #
@@ -313,7 +315,8 @@ class CreateReportScreen(Screen):
 
     def show_date_picker(self):
         """Вызывается кнопкой выбора даты и показывает DatePicker."""
-        date_dialog = MDDatePicker(language="ru_RU")
+        locale.setlocale(locale.LC_ALL, "ru_RU")
+        date_dialog = MDDatePicker()
         date_dialog.bind(on_save=self.on_save, on_cancel=self.on_cancel)
         date_dialog.open()
 
