@@ -45,10 +45,18 @@ class ReportMaker:
         """Создать отчёт, положить в файлик."""
         report = kwargs
         report["statistics"] = {
-            "Успеваемость": str(self.a_performance(report["e"], report["humans"])) + "%",
-            "Качество": str(self.quality(report["e"], report["humans"])) + "%",
-            "Средний балл": self.average_score(report["e"], report["humans"]),
-            "СОК": str(self.sok(report["e"], report["humans"])) + "%"
+            "Успеваемость": str(self.a_performance(report["e"], (
+                report["humans"] if report["report_type"] == "Четверть" or report["report_type"] == "Год"
+                else report["curr_humans"]))) + "%",
+            "Качество": str(self.quality(report["e"], (
+                report["humans"] if report["report_type"] == "Четверть" or report["report_type"] == "Год"
+                else report["curr_humans"]))) + "%",
+            "Средний балл": self.average_score(report["e"], (
+                report["humans"] if report["report_type"] == "Четверть" or report["report_type"] == "Год"
+                else report["curr_humans"])),
+            "СОК": str(self.sok(report["e"], (
+                report["humans"] if report["report_type"] == "Четверть" or report["report_type"] == "Год"
+                else report["curr_humans"]))) + "%",
         }
         with open(self.filename, "r") as f:
             r = json.load(f)
@@ -67,12 +75,12 @@ class ReportMaker:
 
 # ===================================================================== #
 
-    def burn(self, report):
-        """Удалить из файлика отчёт."""
+    def burn(self, index):
+        """Удалить из файлика отчёт. На вход даётся ТОЛЬКО ИНДЕКС ОТЧЁТА"""
         with open(self.filename, "r") as f:
             r = json.load(f)
 
-        del r["reports"][int(report["index"])-1]
+        del r["reports"][index-1]
 
         """========= Переписывем индексы. ========="""
         for i in range(len(r["reports"])):

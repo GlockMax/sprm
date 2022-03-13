@@ -19,8 +19,8 @@ import locale
 # ///////////////////////////////////////////////////////////////////// #
 # ===================================================================== #
 
-Config.set('graphics', 'width', '1024')
-Config.set('graphics', 'height', '768')
+Config.set('graphics', 'width', '1280')
+Config.set('graphics', 'height', '720')
 Config.set('graphics', 'resizable', '0')
 Config.write()
 
@@ -193,6 +193,12 @@ class CreateReportScreen(Screen):
                 "text": "Четверть",
                 "height": dp(56),
                 "on_release": lambda x="Четверть": self.set_report_type(x),
+            },
+            {
+                "viewclass": "MenuListItem",
+                "text": "Год",
+                "height": dp(56),
+                "on_release": lambda x="Год": self.set_report_type(x),
             }
         ]
         self.report_type = MDDropdownMenu(
@@ -285,9 +291,12 @@ class CreateReportScreen(Screen):
         if item == "Контрольная работа":
             self.ids.tests.disabled = False
             self.ids.quarters.disabled = True
-        else:
+        elif item == "Четверть":
             self.ids.quarters.disabled = False
             self.ids.tests.disabled = True
+        else:
+            self.ids.tests.disabled = True
+            self.ids.quarters.disabled = True
         self.report_type.dismiss()
 
 # ===================================================================== #
@@ -448,7 +457,7 @@ class CreateReportScreen(Screen):
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
 
                 """========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И ТЕКУЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========="""
-                if sum(e.values()) != curr_humans:
+                if sum(e.values()) < curr_humans:
                     self.create_error_snackbar(
                         f"Ошибка: количество оценок {'выше' if sum(e.values()) > curr_humans else 'ниже'}, чем количество человек на контрольной работе!")
                     checklist["curr_humans"] = self.valid_field(instance_textfield=self.ids.curr_humans,
@@ -457,25 +466,26 @@ class CreateReportScreen(Screen):
                         instance_textfield=self.ids[str(i)], only_digits=True, label=self.ids[str(i) + "_label"],
                         force_warning=True) for i in range(2, 6)]
             """<<<<<<<<< КОНЕЦ ВЕТКИ КОНТРОЛЬНЫХ РАБОТ <<<<<<<<<"""
-        elif report_type == "Четверть":
-            """>>>>>>>>> ВЕТКА ДЛЯ ЧЕТВЕРТЕЙ >>>>>>>>>"""
+        elif report_type == "Четверть" or report_type == "Год":
+            """>>>>>>>>> ВЕТКА ДЛЯ ЧЕТВЕРТЕЙ И ГОДА >>>>>>>>>"""
             self.ids.report_type_label.color = (0, 0, 0, 1)
             self.ids.report_type_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Тип отчёта:"
             checklist["report_type"] = True
 
-            """========= ПРОВЕРКА ЧЕТВЕРТИ ========="""
-            if self.ids.n_quarter.current_item != "":
-                quarter = int(self.ids.n_quarter.current_item)
-            else:
-                quarter = 0
-            if quarter in [1, 2, 3, 4]:
-                self.ids.n_quarter_label.color = (0, 0, 0, 1)
-                self.ids.n_quarter_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Четверть:"
-                checklist["n_quarter"] = True
-            else:
-                self.ids.n_quarter_label.color = (1, 0, 0, 1)
-                self.ids.n_quarter_label.text = "[font=segemj]❌[/font]  " + "Четверть:"
-                checklist["n_quarter"] = False
+            """========= ПРОВЕРКА ЧЕТВЕРТИ (ПРИ УСЛОВИИ, ЕСЛИ ЭТО НЕ ГОД) ========="""
+            if report_type != "Год":
+                if self.ids.n_quarter.current_item != "":
+                    quarter = int(self.ids.n_quarter.current_item)
+                else:
+                    quarter = 0
+                if quarter in [1, 2, 3, 4]:
+                    self.ids.n_quarter_label.color = (0, 0, 0, 1)
+                    self.ids.n_quarter_label.text = "[color=#4caf50][font=segemj]✔️[/font][/color]  " + "Четверть:"
+                    checklist["n_quarter"] = True
+                else:
+                    self.ids.n_quarter_label.color = (1, 0, 0, 1)
+                    self.ids.n_quarter_label.text = "[font=segemj]❌[/font]  " + "Четверть:"
+                    checklist["n_quarter"] = False
 
             """========= ПРОВЕРКА ОЦЕНОК ========="""
             checklist["e"] = [self.valid_field(instance_textfield=self.ids[str(i)], only_digits=True,
@@ -492,7 +502,7 @@ class CreateReportScreen(Screen):
                     checklist["e"] = [self.valid_field(
                         instance_textfield=self.ids[str(i)], only_digits=True, label=self.ids[str(i) + "_label"],
                         force_warning=True) for i in range(2, 6)]
-            """<<<<<<<<< КОНЕЦ ВЕТКИ ЧЕТВЕРТЕЙ <<<<<<<<<"""
+            """<<<<<<<<< КОНЕЦ ВЕТКИ ЧЕТВЕРТЕЙ И ГОДА <<<<<<<<<"""
         else:
             """>>>>>>>>> ВЕТКА ПУСТОГО ЗНАЧЕНИЯ >>>>>>>>>"""
             self.ids.report_type_label.color = (1, 0, 0, 1)
@@ -548,32 +558,25 @@ class CreateReportScreen(Screen):
                     curr_humans=int(self.ids.curr_humans.text),
                     e=dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
                 )
-                print(result_of_operation)
-                if result_of_operation == "SUCCESS":
-                    self.parent.current = "success"
-                    self.parent.transition.direction = "left"
-                    self.set_default_values()
-                else:
-                    self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
-                    self.set_default_values()
-
             else:
                 result_of_operation = self.rm.push(
                     course=self.ids.course.text,
                     n_class=int(self.ids.n_class.text),
                     humans=int(self.ids.humans.text),
                     report_type=self.ids.report_type.current_item,
-                    n_quarter=self.ids.n_quarter.current_item,
+                    n_quarter=(self.ids.n_quarter.current_item
+                               if self.ids.report_type.current_item == "Четверть" else "Г"),
                     e=dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
                 )
-                print(result_of_operation)
-                if result_of_operation == "SUCCESS":
-                    self.parent.current = "success"
-                    self.parent.transition.direction = "left"
-                    self.set_default_values()
-                else:
-                    self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
-                    self.set_default_values()
+
+            print(result_of_operation)
+            if result_of_operation == "SUCCESS":
+                self.parent.current = "success"
+                self.parent.transition.direction = "left"
+                self.set_default_values()
+            else:
+                self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
+                self.set_default_values()
 
 
 # ===================================================================== #
@@ -618,17 +621,20 @@ class HistoryOfReports(Screen):
             check=True,
             column_data=[
                 ("[size=14]№[/size]", dp(20)),
-                ("[size=14]Предмет[/size]", dp(47)),
+                ("[size=14]Предмет[/size]", dp(37)),
                 ("[size=14]Класс[/size]", dp(13)),
                 ("[size=14]Кол-во человек[/size]", dp(15)),
-                ("[size=14]Тип отчёта[/size]", dp(30)),
+                ("[size=14]За[/size]", dp(9)),
                 ("[size=14]Дата[/size]", dp(20)),
                 ("[size=14]Человек\n  на К/Р[/size]", dp(17)),
-                ("[size=14]Четверть[/size]", dp(17)),
                 ("[size=14]5[/size]", dp(9)),
                 ("[size=14]4[/size]", dp(9)),
                 ("[size=14]3[/size]", dp(9)),
                 ("[size=14]2[/size]", dp(9)),
+                ("[size=14]Усп-сть[/size]", dp(16)),
+                ("[size=14]Качество[/size]", dp(16)),
+                ("[size=14]Ср. балл[/size]", dp(16)),
+                ("[size=14]СОК[/size]", dp(16)),
             ],
             elevation=2,
             sc=self,
@@ -647,14 +653,15 @@ class HistoryOfReports(Screen):
     def update_table(self):
         """Обновляет таблицу"""
         pull = self.rm.pull()
-        self.data_tables.row_data = ([i.to_list(no_stats=True, order=1) for i in pull] if len(pull) > 1 else
-                                     [pull[-1].to_list(no_stats=True, order=1), ["-" for i in range(12)]])
+        self.data_tables.row_data = (
+            [i.to_list(no_stats=False, split_stats=True, order=1, short_type=True) for i in pull] if len(pull) > 1 else
+            [pull[-1].to_list(no_stats=False, split_stats=True, order=1), ["-" for i in range(15)]])
 
 # ===================================================================== #
 
     def delete_report(self):
         """Удаляет выбранные отчёты."""
-        [self.rm.delete(i, from_str=True) for i in self.data_tables.get_row_checks()]
+        print(*[self.rm.delete(i[0]) for i in self.data_tables.get_row_checks()], sep="\n")
         self.update_table()
 
 # ===================================================================== #

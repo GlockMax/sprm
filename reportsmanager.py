@@ -34,12 +34,12 @@ class Report:
             self.e = {}
             self.index, self.course, self.n_class, self.humans, self.report_type = kwargs[:5]
             print(kwargs[-4:12])
-            if self.report_type == "Контрольная работа":
+            if self.report_type == "Контрольная работа" or self.report_type == "КР":
                 self.date = kwargs[-7]
                 self.curr_humans = kwargs[-6]
                 self.n_quarter = kwargs[-5]
                 self.e = dict(zip(["2", "3", "4", "5"], kwargs[-4:12][::-1]))
-            else:
+            elif self.report_type == "Четверть" or self.report_type == "Ч":
                 self.n_quarter = kwargs[-5]
                 self.date = kwargs[-7]
                 self.curr_humans = kwargs[-6]
@@ -47,18 +47,28 @@ class Report:
 
 # ===================================================================== #
 
-    def to_list(self, no_stats=False, split_e=True, all_params=True, order=-1):
+    def to_list(self, no_stats=False, split_stats=False, split_e=True, all_params=True, order=-1, short_type=False):
         """Преобразует отчёт в список."""
-        return ([self.index, self.course, self.n_class, self.humans, self.report_type, self.date, self.curr_humans,
-                self.n_quarter] +
+        return ([self.index, self.course, self.n_class, self.humans,
+                 (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
+                  else "КР") if short_type else self.report_type, self.date, self.curr_humans] +
                 ([self.e["5"], self.e["4"], self.e["3"], self.e["2"]][::order] if split_e else [self.e]) + (
-            [] if no_stats else [self.statistics])
-                ) if all_params else ((
-                    [self.index, self.course, self.n_class, self.humans, self.report_type, self.date, self.curr_humans]
-                    if self.report_type == "Контрольная работа" else
-                    [self.index, self.course, self.n_class, self.humans, self.report_type, self.n_quarter]) +
-                                      ([self.e["5"], self.e["4"], self.e["3"], self.e["2"]][::order]
-                                       if split_e else [self.e]) + ([] if no_stats else [self.statistics]))
+            [] if no_stats else (
+                [self.statistics["Успеваемость"], self.statistics["Качество"],
+                 self.statistics["Средний балл"], self.statistics["СОК"]] if split_stats else [self.statistics]))
+                ) if all_params else (
+                ([self.index, self.course, self.n_class, self.humans,
+                  (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
+                   else "КР") if short_type else self.report_type, self.date, self.curr_humans]
+                 if self.report_type == "Контрольная работа" else
+                 [self.index, self.course, self.n_class, self.humans,
+                  (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
+                   else "КР") if short_type else self.report_type, self.n_quarter]) +
+                ([self.e["5"], self.e["4"], self.e["3"], self.e["2"]][::order]
+                 if split_e else [self.e]) +
+                ([] if no_stats else
+                 ([self.statistics["Успеваемость"], self.statistics["Качество"],
+                   self.statistics["Средний балл"], self.statistics["СОК"]] if split_stats else [self.statistics])))
 
 # ===================================================================== #
 
@@ -183,10 +193,10 @@ class ReportsManager:
         """Создаёт и 'пихает' новый отчёт в фаил с именем учителя."""
         result_of_operation = self.__exist(kwargs)
         if result_of_operation == -1 or result_of_operation:
-            return "ERROR"
+            return " [!] ERROR"
         elif not result_of_operation:
             self.maker.make(**kwargs)
-            return "SUCCESS"
+            return " [v] SUCCESSFUL PUSHING"
 
 # ===================================================================== #
 
@@ -206,9 +216,10 @@ class ReportsManager:
 
 # ===================================================================== #
 
-    def delete(self, report, from_str=False):
-        """Удаляет отчёт."""
-        self.maker.burn(Report(report, from_str=from_str).to_dict())
+    def delete(self, index):
+        """Удаляет отчёт ПО ЕГО НОМЕРУ."""
+        self.maker.burn(int(index))
+        return " [v] SUCCESSFUL DELETION"
 
 
 # ===================================================================== #
