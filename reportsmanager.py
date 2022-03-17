@@ -168,7 +168,7 @@ class ReportsManager:
             """========= При наличии чеклиста ========="""
             if checklist["course"] and checklist["n_class"]:
                 """========= Если совпал предмет и класс... ========="""
-                if checklist["humans"]:
+                if not checklist["humans"]:
                     """========= А эта строчка хз зачем, но если удалить, то программа крашится ========="""
                     return -1
                 if rt == "Контрольная работа":

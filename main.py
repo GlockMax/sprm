@@ -83,13 +83,13 @@ class MenuScreen(Screen):
         self.ids.nav_button.disabled = False
         self.rm.set_teacher(teacher)
         self.ids.history_button.disabled = False
-        self.ids.stats_button.disabled = False
+        #self.ids.stats_button.disabled = False
         self.teacher_menu.dismiss()
 
 # ===================================================================== #
 
     def on_pre_enter(self, *args):
-        """Перед входом посмотрим, какие у нас есть учителя."""
+        """Перед входом посмотрим, какие у нас есть учителя и есть ли у них отчёты."""
         self.teacher_menu.items = [
             {
                  "viewclass": "MenuListItem",
@@ -105,6 +105,10 @@ class MenuScreen(Screen):
                  "on_release": lambda x=str(): self.set_teacher(x),
             }
         ]
+        if self.rm.get_teacher():
+            self.ids.nav_button.disabled = False
+            self.ids.history_button.disabled = False
+            # self.ids.stats_button.disabled = False
 
 
 # ===================================================================== #
@@ -457,7 +461,7 @@ class CreateReportScreen(Screen):
                 e = dict(zip([2, 3, 4, 5], [int(self.ids[str(i)].text) for i in range(2, 6)]))
 
                 """========= ПРОВЕРКА НА РАЗНИЦУ МЕЖДУ КОЛ-ВОМ ОЦЕНОК И ТЕКУЩИМ КОЛ-ВОМ ЧЕЛОВЕК ========="""
-                if sum(e.values()) < curr_humans:
+                if sum(e.values()) < curr_humans or sum(e.values()) > curr_humans:
                     self.create_error_snackbar(
                         f"Ошибка: количество оценок {'выше' if sum(e.values()) > curr_humans else 'ниже'}, чем количество человек на контрольной работе!")
                     checklist["curr_humans"] = self.valid_field(instance_textfield=self.ids.curr_humans,
@@ -524,6 +528,7 @@ class CreateReportScreen(Screen):
 
         self.ids.humans.text = ""
         self.ids.humans_label.text = "Количество человек:"
+        self.ids.humans.disabled = False
 
         self.ids.report_type.set_item("Выберете тип отчёта")
         self.ids.report_type_label.text = "Тип отчёта:"
@@ -570,7 +575,7 @@ class CreateReportScreen(Screen):
                 )
 
             print(result_of_operation)
-            if result_of_operation == "SUCCESS":
+            if result_of_operation == " [v] SUCCESSFUL PUSHING":
                 self.parent.current = "success"
                 self.parent.transition.direction = "left"
                 self.set_default_values()

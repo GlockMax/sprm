@@ -16,14 +16,14 @@ class ReportMaker:
     @staticmethod
     def a_performance(e, humans):
         """Возвращает успеваемость по четверти или КР."""
-        return round((e[5] + e[4] + e[3]) / humans * 100, 3)
+        return round((e[5] + e[4] + e[3]) / humans * 100)
 
 # ===================================================================== #
 
     @staticmethod
     def quality(e, humans):
         """Возвращает качество выполнения четверти или КР."""
-        return round((e[5] + e[4]) / humans * 100, 3)
+        return round((e[5] + e[4]) / humans * 100)
 
 # ===================================================================== #
 
@@ -37,7 +37,7 @@ class ReportMaker:
     @staticmethod
     def sok(e, humans):
         """Возвращает СОК четверти или КР."""
-        return round((e[5] * 1 + e[4] * 0.64 + e[3] * 0.36 + e[2] * 0.14) / humans * 100, 3)
+        return round((e[5] * 1 + e[4] * 0.64 + e[3] * 0.36 + e[2] * 0.14) / humans * 100)
 
 # ===================================================================== #
 
