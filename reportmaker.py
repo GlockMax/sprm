@@ -80,7 +80,7 @@ class ReportMaker:
         with open(self.filename, "r") as f:
             r = json.load(f)
 
-        del r["reports"][index-1]
+        del r["reports"][index-1 if index > 0 else index]
 
         """========= Переписывем индексы. ========="""
         for i in range(len(r["reports"])):
