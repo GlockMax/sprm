@@ -2,3 +2,5 @@
 .vs
 .idea
 __pycache__
+reports
+sprm_build

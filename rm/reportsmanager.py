@@ -1,84 +1,8 @@
-import json, os
-from reportmaker import ReportMaker
+import json
+import os
 import glob
-
-
-# ===================================================================== #
-# ///////////////////////////////////////////////////////////////////// #
-# ===================================================================== #
-
-
-class Report:
-    """Класс отчёта."""
-    __slots__ = ("index", "course", "n_class", "humans", "report_type", "date",
-                 "curr_humans", "n_quarter", "e", "statistics", "no_stats", "from_str")
-
-    def __init__(self, kwargs, from_str=False):
-        if not from_str:
-            self.index = kwargs["index"]
-            self.course = kwargs["course"]
-            self.n_class = kwargs["n_class"]
-            self.humans = kwargs["humans"]
-            self.report_type = kwargs["report_type"]
-            if self.report_type == "Контрольная работа":
-                self.date = kwargs["date"]
-                self.curr_humans = kwargs["curr_humans"]
-                self.n_quarter = "-"
-            else:
-                self.n_quarter = kwargs["n_quarter"]
-                self.date = "-"
-                self.curr_humans = "-"
-            self.e = kwargs["e"]
-            self.statistics = kwargs["statistics"]
-        else:
-            self.e = {}
-            self.index, self.course, self.n_class, self.humans, self.report_type = kwargs[:5]
-            print(kwargs[-4:12])
-            if self.report_type == "Контрольная работа" or self.report_type == "КР":
-                self.date = kwargs[-7]
-                self.curr_humans = kwargs[-6]
-                self.n_quarter = kwargs[-5]
-                self.e = dict(zip(["2", "3", "4", "5"], kwargs[-4:12][::-1]))
-            elif self.report_type == "Четверть" or self.report_type == "Ч":
-                self.n_quarter = kwargs[-5]
-                self.date = kwargs[-7]
-                self.curr_humans = kwargs[-6]
-            self.statistics = "-"
-
-# ===================================================================== #
-
-    def to_list(self, no_stats=False, split_stats=False, split_e=True, all_params=True, order=-1, short_type=False):
-        """Преобразует отчёт в список."""
-        return ([self.index, self.course, self.n_class, self.humans,
-                 (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
-                  else "КР") if short_type else self.report_type, self.date, self.curr_humans] +
-                ([self.e["5"], self.e["4"], self.e["3"], self.e["2"]][::order] if split_e else [self.e]) + (
-            [] if no_stats else (
-                [self.statistics["Успеваемость"], self.statistics["Качество"],
-                 self.statistics["Средний балл"], self.statistics["СОК"]] if split_stats else [self.statistics]))
-                ) if all_params else (
-                ([self.index, self.course, self.n_class, self.humans,
-                  (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
-                   else "КР") if short_type else self.report_type, self.date, self.curr_humans]
-                 if self.report_type == "Контрольная работа" else
-                 [self.index, self.course, self.n_class, self.humans,
-                  (self.report_type[0]+self.n_quarter if self.report_type == "Четверть" or self.report_type == "Год"
-                   else "КР") if short_type else self.report_type, self.n_quarter]) +
-                ([self.e["5"], self.e["4"], self.e["3"], self.e["2"]][::order]
-                 if split_e else [self.e]) +
-                ([] if no_stats else
-                 ([self.statistics["Успеваемость"], self.statistics["Качество"],
-                   self.statistics["Средний балл"], self.statistics["СОК"]] if split_stats else [self.statistics])))
-
-# ===================================================================== #
-
-    def to_dict(self):
-        """Преобразует отчёт в словарь."""
-        return dict(zip(
-            ["index", "course", "n_class", "humans", "report_type", "date", "curr_humans", "e", "statistics"],
-            self.to_list(split_e=False, all_params=False))) if self.report_type == "Контрольная работа" else (
-            dict(zip(["index", "course", "n_class", "humans", "report_type", "n_quarter", "e", "statistics"],
-                     self.to_list(split_e=False, all_params=False))))
+from rm.reportmaker import ReportMaker
+from rm.reporttype import Report
 
 
 # ===================================================================== #
@@ -89,12 +13,14 @@ class Report:
 class ReportsManager:
     """Класс менеджера отчётов."""
     def __init__(self, teacher=""):
-        self.teacher = teacher
-        self.maker = ReportMaker()
-
-        if self.teacher != "":
-            self.__create()
-            self.maker = ReportMaker(self.teacher + ".json")
+        self.rpath = os.path.abspath("reports")
+        if not os.path.exists(self.rpath):
+            os.mkdir(self.rpath)
+        if teacher:
+            self.set_teacher(teacher)
+        else:
+            self.teacher = teacher
+            self.maker = ReportMaker()
 
 # ===================================================================== #
 
@@ -102,41 +28,41 @@ class ReportsManager:
         """Метод для задания учителя 'задним числом'.
         Использовать только тогда, когда учителя нужно задать позже создания менеджера."""
         self.teacher = teacher
-        self.maker = ReportMaker(self.teacher + ".json")
+        self.maker = ReportMaker(os.path.join(self.rpath, f"{self.teacher}.json"))
         self.__create()
 
 # ===================================================================== #
 
-    @staticmethod
-    def get_teacher(last=False):
-        """Получить имеющихся учителя. Параметр last определяет выдачу последнего учителя """
-        files = glob.glob("*.json")
-        if files:
-            return max(files, key=os.path.getctime).split(".")[0] if last else [i.split(".")[0] for i in files]
-        return []
+    def get_teacher(self, last=False):
+        """Получить имеющихся учителей. Параметр last определяет выдачу последнего учителя """
+        files = glob.glob(os.path.join(self.rpath, "*.json"))
+        return ((
+            os.path.basename(max(files, key=os.path.getctime)).split(".")[0]
+            if last else [os.path.basename(i).split(".")[0] for i in files]
+        ) if files else [])
 
 # ===================================================================== #
 
-    @staticmethod
-    def is_teacher(teacher):
+    def is_teacher(self, teacher):
         """Проверить, существует ли такой учитель."""
-        return True if (teacher + ".json" in glob.glob("*.json") and ReportMaker(teacher + ".json").take() != []
+        return True if (f"{self.teacher}.json" in glob.glob(os.path.join(self.rpath, "*.json"))
+                        and ReportMaker(os.path.join(self.rpath, f"{self.teacher}.json")).take() != []
                         ) else False
 
 # ===================================================================== #
 
-    @staticmethod
-    def delete_trash_reports():
+    def delete_trash_reports(self):
         """Удалить пустые бланки отчётов."""
-        [os.remove(os.path.join(os.path.abspath(os.path.dirname(__file__)), i)) for i in glob.glob("*.json")
-         if ReportMaker(i).take() == []]
+        [os.remove(os.path.join(self.rpath, i)) for i in glob.glob(os.path.join(self.rpath, "*.json"))
+         if ReportMaker(os.path.join(self.rpath, i)).take() == []]
 
 # ===================================================================== #
 
     def __create(self):
         """Внутренний метод для создания файла на имя учителя, куда будут складываться отчёты."""
-        if not os.path.isfile(self.teacher + ".json"):
-            with open(self.teacher + ".json", "w") as f:
+        theory_name = os.path.join(self.rpath, f"{self.teacher}.json")
+        if not os.path.isfile(theory_name):
+            with open(theory_name, "w") as f:
                 json.dump(
                     {"teacher": self.teacher, "reports": []}, f)
 
@@ -148,6 +74,8 @@ class ReportsManager:
 
 # ===================================================================== #
 
+    # TODO: ПЕРЕДЕЛАТЬ НАХУЙ!
+    # FIXME!
     def __exist(self, report):
         """Внутренний метод, проверяющий существование отчёта. Я не ебу, как он работает, но он работает."""
         reports = self.maker.take()
