@@ -5,13 +5,9 @@ from kivy.config import Config
 
 from kivymd.app import MDApp
 
-from rm.reportsmanager import ReportsManager
+from rm import ReportsManager
 
-from ui.menu import MenuScreen
-from ui.createreport import CreateReportScreen
-from ui.history import HistoryOfReports
-from ui.statistics import Statistics
-from ui.importreport import ImportReport
+from ui import MenuScreen, CreateReportScreen, HistoryOfReports, Statistics, ImportReport
 
 
 # ===================================================================== #

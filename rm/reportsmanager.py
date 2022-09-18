@@ -1,8 +1,8 @@
 import json
 import os
 import glob
-from rm.reportmaker import ReportMaker
-from rm.reporttype import Report
+from .reportmaker import ReportMaker
+from .reporttype import Report
 
 
 # ===================================================================== #
