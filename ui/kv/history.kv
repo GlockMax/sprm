@@ -5,7 +5,7 @@
 
 	    MDTopAppBar:
 	        title: "История отчётов"
-	        md_bg_color: 1, 1, 1, 1
+	        md_bg_color: app.theme_cls.primary_color
 	        specific_text_color: "black"
 	        elevation: 2
 	    	left_action_items: [["arrow-left", lambda x: app.back()]]
@@ -13,7 +13,7 @@
         MDFloatLayout:
             MDBoxLayout:
                 size_hint_x: None
-                pos_hint: {"center_x": .35, "center_y": 1}
+                pos_hint: {"center_x": .70, "center_y": 1}
                 size_hint_y: None
 
                 MDGridLayout:
@@ -23,30 +23,31 @@
                     MDRectangleFlatIconButton:
                         id: delete
                         padding: [0, 0, 0, 0]
-                        icon_color: 1, 0, 0, 1
-                        text_color: 1, 0, 0, 1
-                        line_color: 1, 0, 0, 1
+                        icon_color: "red"
+                        text_color: "red"
+                        line_color: 0, 0, 0, 0
                         icon: "trash-can-outline"
                         text: "Удалить"
-                        disabled: True
                         on_release: root.delete_report()
 
                     MDRectangleFlatIconButton:
                         id: print
+                        line_color: 0, 0, 0, 0
                         icon: "printer"
+                        icon_color: app.theme_cls.accent_dark
+                        text_color: "black"
                         padding: [0, 0, 0, 0]
-                        #icon: "trash-can-outline"
                         text: "Распечатать"
-                        disabled: True
                         on_release: root.print_report()
 
                     MDRectangleFlatIconButton:
                         id: sjpg
+                        line_color: 0, 0, 0, 0
                         icon: "file-download"
                         padding: [0, 0, 0, 0]
-                        #icon: "trash-can-outline"
+                        icon_color: app.theme_cls.accent_dark
+                        text_color: "black"
                         text: "Сохранить в .jpeg"
-                        disabled: True
                         on_release: root.save_in_jpeg()
 
             AnchorLayout:

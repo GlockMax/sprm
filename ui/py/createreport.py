@@ -4,6 +4,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.animation import Animation
 from kivy.metrics import dp
 from kivy.lang.builder import Builder
+from kivy.core.window import Window
 
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.pickers import MDDatePicker
@@ -29,13 +30,16 @@ Builder.load_file(os.path.join(os.path.dirname(os.path.dirname(__file__)), "kv",
 
 class CreateReportScreen(Screen):
     """Экран создания отчёта. Если у учителя уже создан отчёт, старый дополняется новыми данными."""
-    def __init__(self, rm, **kwargs):
+    def __init__(self, rm, tc, **kwargs):
         super().__init__(**kwargs)
 
         """========= Инициализация менеджера отчётов ========="""
         self.rm = rm
+        self.theme_cls = tc
 
-        self.user_pref = ""
+        tmp = self.children[0].children[0].children
+        """Цыганские фокусы, чтобы карточка отчёта была за полями отчёта"""
+        tmp[0], tmp[1] = tmp[1], tmp[0]
 
         """========= Создание меню выбора предмета ========="""
         self.course_menu = MDDropdownMenu(
@@ -108,6 +112,16 @@ class CreateReportScreen(Screen):
 
 # ===================================================================== #
 
+    def on_keyboard(self, window, key, scancode, codepoint, modifier):
+        if codepoint == "r" or codepoint == "x" or codepoint == "u":
+            if len(Window.children) > 1 and Window.children[0] == self.report_type:
+                self.set_report_type(codepoint)
+        if codepoint == "1" or codepoint == "2" or codepoint == "3" or codepoint == "4":
+            if len(Window.children) > 1 and Window.children[0] == self.n_quarter:
+                self.set_quarter(codepoint)
+
+# ===================================================================== #
+
     def set_course(self, item):
         """Устанавливает предмет из меню выбора."""
         self.ids.course.text = item if item != "Другой (просто пишите название предмета)" else ""
@@ -160,37 +174,36 @@ class CreateReportScreen(Screen):
 
     def on_pre_enter(self, *args):
         """Перед переходом на этот экран этот метод заполняет меню классов и предметов."""
-        self.course_menu.items = [
-            {
+        Window.bind(on_key_down=self.on_keyboard)
+        self.update_all_menus()
+
+# ===================================================================== #
+
+    def update_all_menus(self):
+        """Обновляем меню классов и предметов"""
+        self.course_menu.items = (
+            [{
                 "viewclass": "MenuListItem",
-                "text": str(i),
-                "height": dp(56),
+                "text": str(i), "height": dp(56),
                 "on_release": lambda x=str(i): self.set_course(x),
-            } for i in self.rm.pull(only_courses=True)
-        ] + [
-            {
+            } for i in self.rm.pull(only_courses=True)] +
+            [{
                 "viewclass": "MenuListItem",
                 "text": "Другой (просто пишите название предмета)",
-                "height": dp(56),
-                "on_release": lambda x=str(): self.set_course(x),
-            }
-        ]
+                "height": dp(56), "on_release": lambda x=str(): self.set_course(x)}])
 
-        self.n_class_menu.items = [
-            {
+        self.n_class_menu.items = (
+            [{
                 "viewclass": "MenuListItem",
                 "text": str(i),
                 "height": dp(56),
                 "on_release": lambda x=str(i): self.set_n_class(x),
             } for i in self.rm.pull(only_classes=True)
-        ] + [
-            {
+            ] + [{
                 "viewclass": "MenuListItem",
                 "text": "Другой (просто пишите номер класса)",
                 "height": dp(56),
-                "on_release": lambda x=str(): self.set_n_class(x),
-            }
-        ]
+                "on_release": lambda x=str(): self.set_n_class(x)}])
 
 # ===================================================================== #
 
@@ -202,12 +215,15 @@ class CreateReportScreen(Screen):
         if item == "Контрольная работа" or item == "r":
             self.ids.tests.disabled = False
             self.ids.quarters.disabled = True
+            self.show_date_picker()
         elif item == "Четверть" or item == "x":
             self.ids.quarters.disabled = False
             self.ids.tests.disabled = True
+            self.n_quarter.open()
         elif item == "Год" or item == "u":
             self.ids.tests.disabled = True
             self.ids.quarters.disabled = True
+            self.ids.i5.focus = True
         self.report_type.dismiss()
 
 # ===================================================================== #
@@ -216,6 +232,7 @@ class CreateReportScreen(Screen):
         """Устанавливает номер четверти."""
         self.ids.n_quarter.set_item(item)
         self.n_quarter.dismiss()
+        self.ids.i5.focus = True
 
 # ===================================================================== #
 
@@ -223,6 +240,7 @@ class CreateReportScreen(Screen):
         """Сохраняет выбранную дату и отображает на экране."""
         date_test = ".".join(str(value).split("-")[::-1])
         self.ids.date_label.text = "Дата:    " + f"[size=18][i]{date_test}[/i][/size]"
+        self.ids.curr_humans.focus = True
 
 # ===================================================================== #
 
@@ -236,9 +254,15 @@ class CreateReportScreen(Screen):
     def show_date_picker(self):
         """Вызывается кнопкой выбора даты и показывает DatePicker."""
         setlocale(LC_ALL, "ru_RU")
-        date_dialog = MDDatePicker()
+        date_dialog = MDDatePicker(
+            title="Выберете дату", title_input="Введите дату",
+            primary_color=self.theme_cls.accent_color, accent_color=self.theme_cls.primary_color,
+            selector_color=self.theme_cls.accent_dark, text_button_color=self.theme_cls.accent_dark,
+            input_field_background_color_focus=self.theme_cls.accent_color
+        )
         date_dialog.bind(on_save=self.on_save, on_cancel=self.on_cancel)
         date_dialog.open()
+        pass
 
 # ===================================================================== #
 
@@ -300,13 +324,17 @@ class CreateReportScreen(Screen):
 
     def create_error_snackbar(self, text):
         """Создаёт снэкбар с содержанием ошибки и отображает его на экран."""
-        error_snackbar = Snackbar(
-            text=text,
-            snackbar_x="10dp",
-            snackbar_y="10dp",
+        es = Snackbar(
+            text=text, snackbar_x="10dp",
+            snackbar_y="10dp", size_hint_x=.5, radius=[2, 2, 2, 2]
         )
-        error_snackbar.size_hint_x = (1024 - (error_snackbar.snackbar_x * 2)) / 1024
-        error_snackbar.open()
+        es.theme_cls.material_style = "M3"
+        es.bg_color = "grey"
+        es.style = "elevated"
+        es.line_color = (0, 0, 0, 1)
+        es.shadow_softness = 14
+        es.shadow_offset = 0, 0
+        es.open()
 
 # ===================================================================== #
 
@@ -465,14 +493,22 @@ class CreateReportScreen(Screen):
 
 # ===================================================================== #
 
+    def reset_create_button(self):
+        """Сбрасывает"""
+        self.ids.create_button.text = "Создать"
+        self.ids.create_button.icon = "creation"
+        self.more_reports = False
+
+# ===================================================================== #
+
     def create_report(self, *args):
         """Создаёт новый отчёт."""
         if self.more_reports:
-            self.set_default_values()
             self.display_success_widget(show=False)
-            self.ids.create_button.text = "Создать"
-            self.ids.create_button.icon = "creation"
-            self.more_reports = False
+            self.set_default_values()
+            self.reset_create_button()
+            self.ids.printer.disabled = True
+            self.ids.file_download.disabled = True
             return
         if all(self.get_checklist().values()):
             if self.ids.report_type.current_item == "Контрольная работа":
@@ -503,10 +539,13 @@ class CreateReportScreen(Screen):
                 self.ids.qual.text = last_report.statistics["Качество"]
                 self.ids.aver.text = str(last_report.statistics["Средний балл"])
                 self.ids.sok.text = last_report.statistics["СОК"]
+                self.ids.printer.disabled = False
+                self.ids.file_download.disabled = False
                 self.ids.create_button.text = "Создать ещё"
                 self.ids.create_button.icon = "timeline-plus"
                 self.more_reports = True
                 self.display_success_widget()
+                self.update_all_menus()
             else:
                 self.create_error_snackbar("Извините, но отчёт уже существует или неправильно заполнен!")
                 self.set_default_values()
@@ -522,5 +561,7 @@ class CreateReportScreen(Screen):
 # ===================================================================== #
 
     def on_leave(self, *args):
+        Window.unbind(on_key_down=self.on_keyboard)
         self.set_default_values()
         self.display_success_widget(show=False)
+        self.reset_create_button()

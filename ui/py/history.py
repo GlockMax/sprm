@@ -1,10 +1,15 @@
 import os
+import inspect
 
 from kivy.uix.screenmanager import Screen
 from kivy.metrics import dp
 from kivy.lang.builder import Builder
+from kivy.clock import Clock
 
 from kivymd.uix.datatables import MDDataTable
+from kivymd.uix.snackbar import Snackbar
+
+from .table import Table
 
 
 # ===================================================================== #
@@ -26,31 +31,11 @@ class HistoryOfReports(Screen):
         super().__init__(**kwargs)
 
         self.rm = rm
-
-        self.data_tables = MDDataTable(
-            check=True,
-            column_data=[
-                ("[size=14]№[/size]", dp(20)),
-                ("[size=14]Предмет[/size]", dp(37)),
-                ("[size=14]Класс[/size]", dp(13)),
-                ("[size=14]Кол-во человек[/size]", dp(15)),
-                ("[size=14]За[/size]", dp(9)),
-                ("[size=14]Дата[/size]", dp(20)),
-                ("[size=14]Человек\n  на К/Р[/size]", dp(17)),
-                ("[size=14]5[/size]", dp(9)),
-                ("[size=14]4[/size]", dp(9)),
-                ("[size=14]3[/size]", dp(9)),
-                ("[size=14]2[/size]", dp(9)),
-                ("[size=14]Усп-сть[/size]", dp(16)),
-                ("[size=14]Качество[/size]", dp(16)),
-                ("[size=14]Ср. балл[/size]", dp(16)),
-                ("[size=14]СОК[/size]", dp(16)),
-            ],
-            elevation=2,
-            rows_num=10000,
+        self.table = Table(
+            table_header=["№", "Предмет", "Класс", "Кол-во человек", "За", "Дата", "Человек\nна КР",
+                          "5", "4", "3", "2", "У", "К", "СрБ", "СОК"]
         )
-        self.data_tables.bind(on_check_press=self.on_check_press)
-        self.ids.history.add_widget(self.data_tables)
+        self.ids.history.add_widget(self.table)
 
 # ===================================================================== #
 
@@ -60,40 +45,44 @@ class HistoryOfReports(Screen):
 
 # ===================================================================== #
 
-    def on_check_press(self, instance_table, current_row):
-        """Вызывается, когда нажат чекбокс, и делает видимыми кнопки управления."""
-        if self.data_tables.get_row_checks():
-            self.ids.delete.disabled = False
-            self.ids.print.disabled = False
-            self.ids.sjpg.disabled = False
-        else:
-            self.ids.delete.disabled = True
-            self.ids.print.disabled = True
-            self.ids.sjpg.disabled = True
-
-# ===================================================================== #
-
     def update_table(self):
         """Обновляет таблицу"""
         pull = self.rm.pull()
-        self.data_tables.row_data = (
-            [i.to_list(no_stats=False, split_stats=True, order=1, short_type=True) for i in pull] if len(pull) > 1 else
-            ([pull[0].to_list(no_stats=False, split_stats=True, order=1, short_type=True), ["-" for i in range(15)]]
-                if len(pull) == 1 else [["-" for i in range(15)], ["-" for i in range(15)]]))
+        self.table.set_table_content(
+            [i.to_list(no_stats=False, split_stats=True, order=1, short_type=True) for i in pull])
 
 # ===================================================================== #
 
     def delete_report(self):
         """Удаляет выбранные отчёты."""
-        print(*[self.rm.delete(i[0]) for i in self.data_tables.get_row_checks()], sep="\n")
-        self.update_table()
+        if not self.table.get_marked():
+            es = Snackbar(
+                text="Не выбрано ни одного отчёта для удаления!", snackbar_x="10dp",
+                snackbar_y="10dp", size_hint_x=.5, radius=[2, 2, 2, 2]
+            )
+            es.theme_cls.material_style = "M3"
+            es.bg_color = "grey"
+            es.style = "elevated"
+            es.line_color = (0, 0, 0, 1)
+            es.shadow_softness = 14
+            es.shadow_offset = 0, 0
+            es.open()
+            return
+        for i in sorted(self.table.get_marked(), reverse=True):
+            print(self.rm.delete(i))
+            self.table.remove_marked()
+            self.table.change_indexes()
 
 # ===================================================================== #
 
     def print_report(self):
         """Выводит на печать выбранные отчёты."""
+        pass
 
 # ===================================================================== #
 
     def save_in_jpeg(self):
         """Сохраняет в джипег выбранные отчёты."""
+        pass
+
+# ===================================================================== #

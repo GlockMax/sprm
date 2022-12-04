@@ -46,11 +46,13 @@ class SprmApp(MDApp):
 
     def build(self):
         """'Постройка' нашего приложения"""
-        Window.bind(on_key_down=self.on_keyboard)
+        self.theme_cls.primary_palette = "DeepPurple"
+        self.theme_cls.accent_palette = "Teal"
+        self.theme_cls.primary_hue = "50"
+        self.theme_cls.accent_hue = "100"
         self.sm.add_widget(MenuScreen(name="menu", rm=self.rm))
-        self.sm.add_widget(CreateReportScreen(name="create_report", rm=self.rm))
+        self.sm.add_widget(CreateReportScreen(name="create_report", rm=self.rm, tc=self.theme_cls))
         self.sm.add_widget(HistoryOfReports(name="history", rm=self.rm))
-        self.sm.add_widget(ImportReport(name="import"))
         self.sm.add_widget(Statistics(name="stats"))
         return self.sm
 
@@ -59,19 +61,6 @@ class SprmApp(MDApp):
     def on_stop(self):
         """По выходу из приложения удаляет мусорные отчёты."""
         self.rm.delete_trash_reports()
-
-# ===================================================================== #
-
-    # TODO: РЕАЛИЗОВАТЬ ПРОБРОСКУ СОБЫТИЙ С КЛАВИАТУРЫ
-    def on_keyboard(self, window, key, scancode, codepoint, modifier):
-        if codepoint == "r" or codepoint == "x" or codepoint == "u":
-            if self.sm.current_screen.name == "create_report" and len(Window.children) > 1:
-                if Window.children[0] == self.sm.get_screen("create_report").report_type:
-                    self.sm.get_screen("create_report").set_report_type(codepoint)
-        if codepoint == "1" or codepoint == "2" or codepoint == "3" or codepoint == "4":
-            if self.sm.current_screen.name == "create_report" and len(Window.children) > 1:
-                if Window.children[0] == self.sm.get_screen("create_report").n_quarter:
-                    self.sm.get_screen("create_report").set_quarter(codepoint)
 
 
 # ===================================================================== #

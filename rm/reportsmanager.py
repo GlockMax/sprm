@@ -118,7 +118,7 @@ class ReportsManager:
 # ===================================================================== #
 
     def push(self, **kwargs):
-        """Создаёт и 'пихает' новый отчёт в фаил с именем учителя."""
+        """Создаёт и 'пихает' новый отчёт в файл с именем учителя."""
         result_of_operation = self.__exist(kwargs)
         if result_of_operation == -1 or result_of_operation:
             return " [!] ERROR"
@@ -131,7 +131,7 @@ class ReportsManager:
     def pull(self, last_report=False, only_classes=False, only_courses=False, show_humans=False, n_class=0):
         """'Вытягивает' отчёты из файла. Возвращает массив с Report-объектами, в противном случае, при last_report=True
         выдаёт последний отчёт, а с параметрами only_classes или only_courses
-        выдаёт список имеющихся классов и предметов соотвтственно. Чтобы посмотреть кол-во человек в классе,
+        выдаёт список имеющихся классов и предметов соответственно. Чтобы посмотреть кол-во человек в классе,
         выставите show_humans в True и укажите класс в n_class."""
         reports = self.maker.take()
         if show_humans:
@@ -140,7 +140,7 @@ class ReportsManager:
             list(set([Report(i).course for i in reports])) if only_courses else (
                 Report(reports[-1]) if last_report else
                 list(set([Report(i).humans for i in reports if Report(i).n_class == n_class]))[0]
-                if show_humans else[Report(i) for i in reports])))
+                if show_humans else [Report(i) for i in reports])))
 
 # ===================================================================== #
 

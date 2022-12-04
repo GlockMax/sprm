@@ -8,7 +8,7 @@
         MDTopAppBar:
             id: toolbar
             title: "Создать отчёт"
-            md_bg_color: 1, 1, 1, 1
+            md_bg_color: app.theme_cls.primary_color
             specific_text_color: "black"
             elevation: 2
             left_action_items: [["arrow-left", lambda x: app.back()]]
@@ -19,7 +19,6 @@
             MDBoxLayout:
                 id: main_layout
                 orientation: "vertical"
-                #rows: 7
                 padding: [50, 30, 50, 0]
                 spacing: 0
 
@@ -52,11 +51,11 @@
                             mode: "line"
                             font_size: "14sp"
                             size_hint_max_x: 250
-                            line_color_normal: 0, 0, 0, 1
-                            line_color_focus: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
                             on_focus: if self.focus: root.course_menu.open()
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: root.course_menu.dismiss(); n_class.focus = True
 
         # ========= КЛАСС ======== #
                 MDBoxLayout:
@@ -92,11 +91,11 @@
                             size_hint_max_x: 70
                             font_size: "14sp"
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
-                            line_color_focus: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
                             on_focus: if self.focus: root.n_class_menu.open()
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: root.n_class_menu.dismiss(); letter.focus = True
                     AnchorLayout:
                         anchor_x: "right"
                         anchor_y: "top"
@@ -122,11 +121,11 @@
                             size_hint_max_x: 70
                             font_size: "14sp"
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
-                            line_color_focus: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
                             on_focus: if self.focus: root.n_class_menu.open()
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: root.n_class_menu.dismiss(); humans.focus = True
 
         # ========= КОЛ-ВО ЧЕЛОВЕК ======== #
                 MDBoxLayout:
@@ -158,10 +157,10 @@
                             size_hint_max_x: 70
                             font_size: "14sp"
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
-                            line_color_focus: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: root.report_type.open()
 
         # ========= ТИП ОТЧЁТА ======== #
                 MDBoxLayout:
@@ -236,11 +235,12 @@
                                 anchor_y: "center"
                                 pos_hint: {'center_x': .9, 'center_y': 2}
 
-                                MDRaisedButton:
+                                MDRectangleFlatButton:
                                     id: date
                                     text: "Выбрать день"
                                     font_size: "14sp"
-                                    padding: [0, 0, 0, 0]
+                                    text_color: app.theme_cls.accent_dark
+                                    line_color: app.theme_cls.accent_color
                                     on_release: root.show_date_picker()
             # ========= КОЛ-ВО ЧЕЛОВЕК НА КР ======== #
                         MDBoxLayout:
@@ -272,9 +272,10 @@
                                     size_hint_max_x: 70
                                     font_size: "14sp"
                                     mode: "line"
-                                    line_color_normal: 0, 0, 0, 1
+                                    line_color_focus: app.theme_cls.accent_dark
+                                    text_color_focus: app.theme_cls.accent_dark
                                     padding: [0, 0, 0, 0]
-                                    on_text_validate: root.switch_focus(self)
+                                    on_text_validate: i5.focus = True
 
         # ========= ДЛЯ ЧЕТВЕРТЕЙ: ======== #
                     MDGridLayout:
@@ -350,9 +351,10 @@
                             hint_text: ""
                             size_hint_max_x: 70
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: i4.focus = True
 
         # ========= ЧЕТВЁРКИ ======== #
                     AnchorLayout:
@@ -379,9 +381,10 @@
                             hint_text: ""
                             size_hint_max_x: 70
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: i3.focus = True
 
         # ========= ТРОЙКИ ======== #
                     AnchorLayout:
@@ -408,9 +411,10 @@
                             hint_text: ""
                             size_hint_max_x: 70
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: i2.focus = True
 
         # ========= ДВОЙКИ ======== #
                     AnchorLayout:
@@ -437,9 +441,10 @@
                             hint_text: ""
                             size_hint_max_x: 70
                             mode: "line"
-                            line_color_normal: 0, 0, 0, 1
+                            line_color_focus: app.theme_cls.accent_dark
+                            text_color_focus: app.theme_cls.accent_dark
                             padding: [0, 0, 0, 0]
-                            on_text_validate: root.switch_focus(self)
+                            on_text_validate: root.create_report()
 
         # ========= ННОПКА СОЗДАНИЯ ОТЧЁТА ======== #
                 MDBoxLayout:
@@ -455,33 +460,39 @@
                             icon: "creation"
                             text: "Создать"
                             font_size: "14sp"
+                            line_color: app.theme_cls.accent_color
+                            text_color: app.theme_cls.accent_dark
+                            icon_color: app.theme_cls.accent_dark
                             on_release: root.create_report()
-            MDBoxLayout:
+            MDCard:
                 id: success
                 orientation: "vertical"
-                pos: (320, 72)
+                pos_hint: {"center_x": .8, "center_y": .5}
                 opacity: 0
+                md_bg_color: app.theme_cls.primary_color
 
+                size: "350dp", "450dp"
+                size_hint: None, None
                 MDBoxLayout
                     spacing: 30
-                    pos_hint: {'center_x': .5, 'center_y': .30}
-                    padding: [0, 0, 0, 60]
+                    pos_hint: {'center_x': .4, 'center_y': .70}
+                    padding: [0, 0, 0, 0]
 
                     AnchorLayout:
-                        anchor_x: "center"
+                        anchor_x: "right"
                         anchor_y: "center"
-                        pos_hint: {'center_x': .5, 'center_y': .30}
+                        pos_hint: {'center_x': .5, 'center_y': .50}
 
                         MDIcon:
-                            icon: "checkbox-marked-circle-outline"
+                            icon: "content-save-check-outline"
                             font_size: "48sp"
                             halign: "right"
-                            color: "#4caf50"
+                            color: app.theme_cls.accent_dark
 
                     AnchorLayout:
                         anchor_x: "center"
                         anchor_y: "center"
-                        pos_hint: {'center_x': .5, 'center_y': .30}
+                        pos_hint: {'center_x': .5, 'center_y': .50}
 
                         MDLabel:
                             text: "Отчёт создан!"
@@ -492,7 +503,8 @@
 
                 MDGridLayout:
                     rows: 4
-                    spacing: 60
+                    spacing: 45
+                    pos_hint: {'center_x': .57, 'center_y': .5}
 
                     MDBoxLayout:
                         rows: 4
@@ -608,16 +620,29 @@
                                 halign: "left"
 
                 MDBoxLayout:
-                    orientation: "horizontal"
-                    pos_hint: {"center_x": 0.9, "center_y": 0.1}
-                    spacing: 30
-
-                    MDRectangleFlatIconButton:
-                        icon: "printer"
-                        text: "Вывести на печать"
-                        font_size: "14sp"
-
-                    MDRectangleFlatIconButton:
-                        icon: "file-download"
-                        text: "Сохранить в .jpeg"
-                        font_size: "14sp"
+                    orientation: "vertical"
+                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "bottom"
+                        MDRectangleFlatIconButton:
+                            id: printer
+                            disabled: True
+                            icon: "printer"
+                            text: "Вывести на печать"
+                            font_size: "14sp"
+                            line_color: app.theme_cls.accent_color
+                            icon_color: app.theme_cls.accent_dark
+                            text_color: app.theme_cls.accent_dark
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        MDRectangleFlatIconButton:
+                            id: file_download
+                            disabled: True
+                            icon: "file-download"
+                            text: "Сохранить в .jpeg"
+                            font_size: "14sp"
+                            line_color: app.theme_cls.accent_color
+                            icon_color: app.theme_cls.accent_dark
+                            text_color: app.theme_cls.accent_dark
